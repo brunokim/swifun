@@ -191,10 +191,13 @@ expression(Tree) -->
     expression(Ops, Tree).
 expression(Ops, Tree) -->
     atomic_expressions(Ops, Exprs),
-    {valid_operation(Exprs),
-     extract_symbs(Exprs, SymbSet),
-     filter_operators(Ops, SymbSet, OpSet),
-     phrase(operation(OpSet, 1200, Tree0), Exprs),
+    {( Exprs = [Tree0] ->
+       true
+     ; valid_operation(Exprs),
+       extract_symbs(Exprs, SymbSet),
+       filter_operators(Ops, SymbSet, OpSet),
+       phrase(operation(OpSet, 1200, Tree0), Exprs)
+     ),
      remove_parens(Tree0, Tree)
     }.
 
