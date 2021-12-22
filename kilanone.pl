@@ -1,4 +1,4 @@
-:- module(kilanone, [expression//1, expression//2]).
+:- module(kilanone, [expression//1, expression//2, operation//3]).
 
 :- use_module(library(clpfd)).
 :- use_module(library(tabling)).
