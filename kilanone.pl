@@ -97,29 +97,29 @@ op_pos(suffix, xf).
 op_pos(suffix, yf). 
 
 base_operators([
-    op(":=",  xfx, 990),
-    op("not",  fy, 900),
-    op("<",   xfx, 700),
-    op(">",   xfx, 700),
-    op("=<",  xfx, 700),
-    op(">=",  xfx, 700),
-    op("=",   xfx, 700),
-    op("==",  xfx, 700),
-    op("!=",  xfx, 700),
-    op("<>",  xfx, 700),
-    op("+",   yfx, 500),
-    op("-",   yfx, 500),
-    op("or",  yfx, 500),
-    op("*",   yfx, 400),
-    op("/",   yfx, 400),
-    op("and", yfx, 400),
-    op("+",    fy, 200),
-    op("-",    fy, 200),
-    op("^",   xfy, 200)]).
+    op( 990, xfx, ":="),
+    op( 900,  fy, "not"),
+    op( 700, xfx, "<"),
+    op( 700, xfx, ">"),
+    op( 700, xfx, "=<"),
+    op( 700, xfx, ">="),
+    op( 700, xfx, "="),
+    op( 700, xfx, "=="),
+    op( 700, xfx, "!="),
+    op( 700, xfx, "<>"),
+    op( 500, yfx, "+"),
+    op( 500, yfx, "-"),
+    op( 500, yfx, "or"),
+    op( 400, yfx, "*"),
+    op( 400, yfx, "/"),
+    op( 400, yfx, "and"),
+    op( 200,  fy, "+"),
+    op( 200,  fy, "-"),
+    op( 200, xfy, "^")]).
 
 get_operator(Ops, Pos, MaxPrecedence, Op) :-
     member(Op, Ops),
-    Op = op(_, Type, Precedence),
+    Op = op(Precedence, Type, _),
     op_pos(Pos, Type),
     Precedence #=< MaxPrecedence.
 
@@ -168,7 +168,7 @@ extract_symbs(Exprs, SymbSet) :-
 % Filter the list of operators down only to those that occur in SymbSet, and put
 % them in an ordered set.
 filter_operators(Ops, SymbSet, OpSet) :-
-    include({SymbSet}/[op(Symb,_,_)]>>ord_memberchk(Symb, SymbSet), Ops, Ops_),
+    include({SymbSet}/[op(_,_,Symb)]>>ord_memberchk(Symb, SymbSet), Ops, Ops_),
     list_to_ord_set(Ops_, OpSet).
 
 % Remove parens from expression tree after operation is parsed.
@@ -202,7 +202,7 @@ expression(Ops, Tree) -->
 
 :- table operation//3.
 
-op_precedence(op(_, Type, Precedence), LeftPrecedence, RightPrecedence) :-
+op_precedence(op(Precedence, Type, _), LeftPrecedence, RightPrecedence) :-
     op_associativity(Associativity, Type),
     ( Associativity = none  -> LeftPrecedence #= Precedence-1, RightPrecedence #= Precedence-1
     ; Associativity = right -> LeftPrecedence #= Precedence-1, RightPrecedence #= Precedence
@@ -214,7 +214,7 @@ operation(_, _, Expr) --> [Expr].
 operation(OpSet, MaxPrecedence, operation(Op, Expr)) -->
     {prefix_operator(OpSet, MaxPrecedence, Op),
      op_precedence(Op, _, RightPrecedence),
-     Op = op(Symb, _, _)
+     Op = op(_, _, Symb)
     },
     [id(Symb)],
     operation(OpSet, RightPrecedence, Expr).
@@ -222,7 +222,7 @@ operation(OpSet, MaxPrecedence, operation(Op, Expr)) -->
 operation(OpSet, MaxPrecedence, operation(Op, Expr)) -->
     {suffix_operator(OpSet, MaxPrecedence, Op),
      op_precedence(Op, LeftPrecedence, _),
-     Op = op(Symb, _, _)
+     Op = op(_, _, Symb)
     },
     operation(OpSet, LeftPrecedence, Expr),
     [id(Symb)].
@@ -230,7 +230,7 @@ operation(OpSet, MaxPrecedence, operation(Op, Expr)) -->
 operation(OpSet, MaxPrecedence, operation(Op, Left, Right)) -->
     {binary_operator(OpSet, MaxPrecedence, Op),
      op_precedence(Op, LeftPrecedence, RightPrecedence),
-     Op = op(Symb, _, _)
+     Op = op(_, _, Symb)
     },
     operation(OpSet, LeftPrecedence, Left),
     [id(Symb)],
