@@ -1,4 +1,4 @@
-:- module(kilanone, [expression//1, expression//2, operation//3]).
+:- module(kilanone, [expression//1, expression//2]).
 
 :- use_module(library(ordsets)).
 :- use_module(library(yall)).
@@ -163,11 +163,9 @@ extract_symbs(Exprs, SymbSet) :-
     maplist([id(Symb), Symb]>>true, Identifiers, Symbs),
     list_to_ord_set(Symbs, SymbSet).
 
-% Filter the list of operators down only to those that occur in SymbSet, and put
-% them in an ordered set.
-filter_operators(Ops, SymbSet, OpSet) :-
-    include({SymbSet}/[op(_,_,Symb)]>>ord_memberchk(Symb, SymbSet), Ops, Ops_),
-    list_to_ord_set(Ops_, OpSet).
+% Filter the list of operators down only to those that occur in SymbSet.
+filter_operators(Ops, SymbSet, ExprOps) :-
+    include({SymbSet}/[op(_,_,Symb)]>>ord_memberchk(Symb, SymbSet), Ops, ExprOps).
 
 % Remove parens from expression tree after operation is parsed.
 % Parens mark literal operators that should be treated just like identifiers, e.g.,
@@ -193,14 +191,22 @@ expression(Ops, Tree) -->
        true
      ; valid_operation(Exprs),
        extract_symbs(Exprs, SymbSet),
-       filter_operators(Ops, SymbSet, OpSet),
-       phrase(operation(OpSet, 1200, Tree0), Exprs)
+       filter_operators(Ops, SymbSet, ExprOps),
+       phrase(operation(ExprOps, 1200, Tree0), Exprs)
      ),
      remove_parens(Tree0, Tree)
     }.
 
 % -----
 
+% A tabled predicate has an undefined resolution order, so we can't rely on the order of
+% clauses to provide a deterministic parse tree.
+%
+% This is a problem for an expression like "-+a", which can be parsed as both -(+(a)), where
+% '+' is a unary operator, and +(-, a), where '+' is a binary operator. We then restrict that
+% operators can't appear as terminals from an operation.
+% The text "-+a" is thus always parsed as -(+(a)); if we'd want for the other interpretation,
+% we must write "(-)+a".
 :- table operation//3.
 
 op_precedence(op(Precedence, Type, _), LeftPrecedence, RightPrecedence) :-
@@ -210,31 +216,37 @@ op_precedence(op(Precedence, Type, _), LeftPrecedence, RightPrecedence) :-
     ; Associativity = left  -> LeftPrecedence is Precedence,   RightPrecedence is Precedence-1
     ).
 
-operation(_, _, Expr) --> [Expr].
+% Terminal branch.
+operation(ExprOps, _, Expr) -->
+    [Expr],
+    {\+ (Expr = id(Symb), member(op(_, _, Symb), ExprOps))}.
 
-operation(OpSet, MaxPrecedence, operation(Op, Expr)) -->
-    {prefix_operator(OpSet, MaxPrecedence, Op),
+% Prefix branch.
+operation(ExprOps, MaxPrecedence, operation(Op, Expr)) -->
+    {prefix_operator(ExprOps, MaxPrecedence, Op),
      op_precedence(Op, _, RightPrecedence),
      Op = op(_, _, Symb)
     },
     [id(Symb)],
-    operation(OpSet, RightPrecedence, Expr).
+    operation(ExprOps, RightPrecedence, Expr).
 
-operation(OpSet, MaxPrecedence, operation(Op, Expr)) -->
-    {suffix_operator(OpSet, MaxPrecedence, Op),
+% Suffix branch.
+operation(ExprOps, MaxPrecedence, operation(Op, Expr)) -->
+    {suffix_operator(ExprOps, MaxPrecedence, Op),
      op_precedence(Op, LeftPrecedence, _),
      Op = op(_, _, Symb)
     },
-    operation(OpSet, LeftPrecedence, Expr),
+    operation(ExprOps, LeftPrecedence, Expr),
     [id(Symb)].
 
-operation(OpSet, MaxPrecedence, operation(Op, Left, Right)) -->
-    {binary_operator(OpSet, MaxPrecedence, Op),
+% Binary branch.
+operation(ExprOps, MaxPrecedence, operation(Op, Left, Right)) -->
+    {binary_operator(ExprOps, MaxPrecedence, Op),
      op_precedence(Op, LeftPrecedence, RightPrecedence),
      Op = op(_, _, Symb)
     },
-    operation(OpSet, LeftPrecedence, Left),
+    operation(ExprOps, LeftPrecedence, Left),
     [id(Symb)],
-    operation(OpSet, RightPrecedence, Right).
+    operation(ExprOps, RightPrecedence, Right).
 
 % -----
