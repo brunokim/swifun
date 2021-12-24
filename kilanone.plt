@@ -27,35 +27,35 @@ parse_id(`<!>`, id("<!>")).
 test("parse a", [nondet, forall(parse_id(Text, Want)), Got = Want]) :-
     phrase(expression(Got), Text).
 
-parse_binary_operation(`a+b`, operation(op(_,_,"+"), id("a"), id("b"))).
-parse_binary_operation(`a +b`, operation(op(_,_,"+"), id("a"), id("b"))).
-parse_binary_operation(`a+ b`, operation(op(_,_,"+"), id("a"), id("b"))).
-parse_binary_operation(`a + b`, operation(op(_,_,"+"), id("a"), id("b"))).
-parse_binary_operation(`a+b+c`,
+parse_infix_operation(`a+b`, operation(op(_,_,"+"), id("a"), id("b"))).
+parse_infix_operation(`a +b`, operation(op(_,_,"+"), id("a"), id("b"))).
+parse_infix_operation(`a+ b`, operation(op(_,_,"+"), id("a"), id("b"))).
+parse_infix_operation(`a + b`, operation(op(_,_,"+"), id("a"), id("b"))).
+parse_infix_operation(`a+b+c`,
     operation(op(_,_,"+"),
         operation(op(_,_,"+"),
             id("a"),
             id("b")),
         id("c"))).
-parse_binary_operation(`a+b*c`,
+parse_infix_operation(`a+b*c`,
     operation(op(_,_,"+"),
         id("a"),
         operation(op(_,_,"*"),
             id("b"),
             id("c")))).
-parse_binary_operation(`a*b+c`,
+parse_infix_operation(`a*b+c`,
     operation(op(_,_,"+"),
         operation(op(_,_,"*"),
             id("a"),
             id("b")),
         id("c"))).
-parse_binary_operation(`(a+b)*c`,
+parse_infix_operation(`(a+b)*c`,
     operation(op(_,_,"*"),
         operation(op(_,_,"+"),
             id("a"),
             id("b")),
         id("c"))).
-parse_binary_operation(`a+b*c+d`,
+parse_infix_operation(`a+b*c+d`,
     operation(op(_,_,"+"),
         operation(op(_,_,"+"),
             id("a"),
@@ -63,7 +63,7 @@ parse_binary_operation(`a+b*c+d`,
                 id("b"),
                 id("c"))),
         id("d"))).
-parse_binary_operation(`a*b+c*d`,
+parse_infix_operation(`a*b+c*d`,
     operation(op(_,_,"+"),
         operation(op(_,_,"*"),
             id("a"),
@@ -71,7 +71,7 @@ parse_binary_operation(`a*b+c*d`,
         operation(op(_,_,"*"),
             id("c"),
             id("d")))).
-test("parse binary operation", [nondet, forall(parse_binary_operation(Text, Want)), Got = Want]) :-
+test("parse infix operation", [nondet, forall(parse_infix_operation(Text, Want)), Got = Want]) :-
     phrase(expression(Got), Text).
 
 parse_prefix_operation(`+a`, operation(op(_,_,"+"), id("a"))).

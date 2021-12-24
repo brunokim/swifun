@@ -86,9 +86,9 @@ op_associativity(right, fy).
 op_associativity(none,  xf).
 op_associativity(left,  yf).
 
-op_pos(binary, xfx).
-op_pos(binary, xfy).
-op_pos(binary, yfx).
+op_pos(infix, xfx).
+op_pos(infix, xfy).
+op_pos(infix, yfx).
 op_pos(prefix, fx). 
 op_pos(prefix, fy). 
 op_pos(suffix, xf). 
@@ -121,8 +121,8 @@ get_operator(Ops, Pos, MaxPrecedence, Op) :-
     op_pos(Pos, Type),
     Precedence =< MaxPrecedence.
 
-binary_operator(Ops, MaxPrecedence, Op) :-
-    get_operator(Ops, binary, MaxPrecedence, Op).
+infix_operator(Ops, MaxPrecedence, Op) :-
+    get_operator(Ops, infix, MaxPrecedence, Op).
 
 prefix_operator(Ops, MaxPrecedence, Op) :-
     get_operator(Ops, prefix, MaxPrecedence, Op).
@@ -203,7 +203,7 @@ expression(Ops, Tree) -->
 % clauses to provide a deterministic parse tree.
 %
 % This is a problem for an expression like "-+a", which can be parsed as both -(+(a)), where
-% '+' is a unary operator, and +(-, a), where '+' is a binary operator. We then restrict that
+% '+' is a unary operator, and +(-, a), where '+' is an infix operator. We then restrict that
 % operators can't appear as terminals from an operation.
 % The text "-+a" is thus always parsed as -(+(a)); if we'd want for the other interpretation,
 % we must write "(-)+a".
@@ -239,9 +239,9 @@ operation(ExprOps, MaxPrecedence, operation(Op, Expr)) -->
     operation(ExprOps, LeftPrecedence, Expr),
     [id(Symb)].
 
-% Binary branch.
+% Infix branch.
 operation(ExprOps, MaxPrecedence, operation(Op, Left, Right)) -->
-    {binary_operator(ExprOps, MaxPrecedence, Op),
+    {infix_operator(ExprOps, MaxPrecedence, Op),
      op_precedence(Op, LeftPrecedence, RightPrecedence),
      Op = op(_, _, Symb)
     },
