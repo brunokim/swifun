@@ -1,6 +1,5 @@
 :- module(kilanone, [expression//1, expression//2, operation//3]).
 
-:- use_module(library(clpfd)).
 :- use_module(library(ordsets)).
 :- use_module(library(yall)).
 
@@ -120,7 +119,7 @@ get_operator(Ops, Pos, MaxPrecedence, Op) :-
     member(Op, Ops),
     Op = op(Precedence, Type, _),
     op_pos(Pos, Type),
-    Precedence #=< MaxPrecedence.
+    Precedence =< MaxPrecedence.
 
 binary_operator(Ops, MaxPrecedence, Op) :-
     get_operator(Ops, binary, MaxPrecedence, Op).
@@ -206,9 +205,9 @@ expression(Ops, Tree) -->
 
 op_precedence(op(Precedence, Type, _), LeftPrecedence, RightPrecedence) :-
     op_associativity(Associativity, Type),
-    ( Associativity = none  -> LeftPrecedence #= Precedence-1, RightPrecedence #= Precedence-1
-    ; Associativity = right -> LeftPrecedence #= Precedence-1, RightPrecedence #= Precedence
-    ; Associativity = left  -> LeftPrecedence #= Precedence,   RightPrecedence #= Precedence-1
+    ( Associativity = none  -> LeftPrecedence is Precedence-1, RightPrecedence is Precedence-1
+    ; Associativity = right -> LeftPrecedence is Precedence-1, RightPrecedence is Precedence
+    ; Associativity = left  -> LeftPrecedence is Precedence,   RightPrecedence is Precedence-1
     ).
 
 operation(_, _, Expr) --> [Expr].
