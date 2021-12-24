@@ -10,9 +10,8 @@ parse_int(`( 1)`, int("1")).
 parse_int(`(1 )`, int("1")).
 parse_int(`( 1 )`, int("1")).
 parse_int(`((1))`, int("1")).
-test("parse int", [nondet, forall(parse_int(Text, Want))]) :-
-    phrase(expression(Got), Text),
-    assertion(Want = Got).
+test("parse int", [nondet, forall(parse_int(Text, Want)), Got = Want]) :-
+    phrase(expression(Got), Text).
 
 parse_id(`a`, id("a")).
 parse_id(`abc`, id("abc")).
@@ -25,9 +24,8 @@ parse_id(`a_123_`, id("a_123_")).
 parse_id(`=`, id("=")).
 parse_id(`?-`, id("?-")).
 parse_id(`<!>`, id("<!>")).
-test("parse a", [nondet, forall(parse_id(Text, Want))]) :-
-    phrase(expression(Got), Text),
-    assertion(Want = Got).
+test("parse a", [nondet, forall(parse_id(Text, Want)), Got = Want]) :-
+    phrase(expression(Got), Text).
 
 parse_binary_operation(`a+b`, operation(op(_,_,"+"), id("a"), id("b"))).
 parse_binary_operation(`a +b`, operation(op(_,_,"+"), id("a"), id("b"))).
@@ -73,9 +71,8 @@ parse_binary_operation(`a*b+c*d`,
         operation(op(_,_,"*"),
             id("c"),
             id("d")))).
-test("parse binary operation", [nondet, forall(parse_binary_operation(Text, Want))]) :-
-    phrase(expression(Got), Text),
-    assertion(Got = Want).
+test("parse binary operation", [nondet, forall(parse_binary_operation(Text, Want)), Got = Want]) :-
+    phrase(expression(Got), Text).
 
 parse_prefix_operation(`+a`, operation(op(_,_,"+"), id("a"))).
 parse_prefix_operation(`-a`, operation(op(_,_,"-"), id("a"))).
@@ -89,8 +86,7 @@ parse_prefix_operation(`-+a`,
             id("a")))).
 parse_prefix_operation(`(+)-a`,
     operation(op(_,_,"-"), id("+"), id("a"))).
-test("parse prefix operation", [nondet, forall(parse_prefix_operation(Text, Want))]) :-
-    phrase(expression(Got), Text),
-    assertion(Got = Want).
+test("parse prefix operation", [nondet, forall(parse_prefix_operation(Text, Want)), Got = Want]) :-
+    phrase(expression(Got), Text).
 
 :- end_tests(kilanone).
