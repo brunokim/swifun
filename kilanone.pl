@@ -139,11 +139,19 @@ atomic_expression(Ops, Tree) -->
       {Tree = paren(Tree0)}
     ).
 
+% We need to check for termination first, so that when we reach the final
+% symbol in a series of atomic expressions, it is accepted greedily. That is,
+% the text `... abcd)` matches first ["abcd"] with rest `)`.
+%
+% If we use the other order, we would first fail, because we'd expect an additional
+% symbol after ws. The first one to match is ["abc", "d"], which may be valid if 'd'
+% is a suffix operator. This doesn't correspond to our expectations that symbols
+% are consumed greedily.
+atomic_expressions(Ops, [Expr]) --> atomic_expression(Ops, Expr).
 atomic_expressions(Ops, [Expr|Exprs]) -->
     atomic_expression(Ops, Expr),
     ws,
     atomic_expressions(Ops, Exprs).
-atomic_expressions(Ops, [Expr]) --> atomic_expression(Ops, Expr).
 
 % Checks if a list of atomic expressions may be a possible operation, by
 % checking that each pair of consecutive elements has at least one identifier.

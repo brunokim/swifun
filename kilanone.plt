@@ -129,6 +129,7 @@ units_ops([
     op(300, xf, "kg"),
     op(300, xf, "s"),
     op(300, xf, "m"),
+    op(200, fy, "not"),
     op(200, fy, "+"),
     op(200, fy, "-")
 ]).
@@ -146,10 +147,20 @@ parse_mixed_operation(`1 + x kg`,
         int("1"),
         operation(op(_,_,"kg"),
             id("x")))).
-parse_mixed_operation(`1 + xkg`,
+parse_mixed_operation(`not x + y kg`,
     operation(op(_,_,"+"),
-        int("1"),
-        id("xkg"))).
+        operation(op(_,_,"not"),
+            id("x")),
+        operation(op(_,_,"kg"),
+            id("y")))).
+parse_mixed_operation(`xkg + ykg`,
+    operation(op(_,_,"+"),
+        id("xkg"),
+        id("ykg"))).
+parse_mixed_operation(`notx + noty`,
+    operation(op(_,_,"+"),
+        id("notx"),
+        id("noty"))).
 test("parse mixed operation", [nondet, forall(parse_mixed_operation(Text, Want)), Got = Want]) :-
     units_ops(Ops),
     phrase(expression(Ops, Got), Text).
