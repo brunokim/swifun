@@ -89,4 +89,69 @@ parse_prefix_operation(`(+)-a`,
 test("parse prefix operation", [nondet, forall(parse_prefix_operation(Text, Want)), Got = Want]) :-
     phrase(expression(Got), Text).
 
+regexp_ops([
+    op(600, yfx, "|"),
+    op(500, xf, "?"),
+    op(400, xf, "+"),
+    op(300, xf, "*")
+]).
+
+parse_suffix_operation(`a*`, operation(op(_,_,"*"), id("a"))).
+parse_suffix_operation(`a+`, operation(op(_,_,"+"), id("a"))).
+parse_suffix_operation(`a?`, operation(op(_,_,"?"), id("a"))).
+parse_suffix_operation(`a+?`,
+    operation(op(_,_,"?"),
+        operation(op(_,_,"+"),
+            id("a")))).
+parse_suffix_operation(`a|b?`,
+    operation(op(_,_,"|"),
+        id("a"),
+        operation(op(_,_,"?"),
+            id("b")))).
+parse_suffix_operation(`a+|b`,
+    operation(op(_,_,"|"),
+        operation(op(_,_,"+"),
+            id("a")),
+        id("b"))).
+parse_suffix_operation(`a+|b?`,
+    operation(op(_,_,"|"),
+        operation(op(_,_,"+"), id("a")),
+        operation(op(_,_,"?"), id("b")))).
+test("parse suffix operation", [nondet, forall(parse_suffix_operation(Text, Want)), Got = Want]) :-
+    regexp_ops(Ops),
+    phrase(expression(Ops, Got), Text).
+
+units_ops([
+    op(500, yfx, "+"),
+    op(500, yfx, "-"),
+    op(400, yfx, "*"),
+    op(400, yfx, "/"),
+    op(300, xf, "kg"),
+    op(300, xf, "s"),
+    op(300, xf, "m"),
+    op(200, fy, "+"),
+    op(200, fy, "-")
+]).
+
+parse_mixed_operation(`-10kg`,
+    operation(op(_,_,"kg"),
+        operation(op(_,_,"-"),
+            int("10")))).
+parse_mixed_operation(`+ x kg`,
+    operation(op(_,_,"kg"),
+        operation(op(_,_,"+"),
+            id("x")))).
+parse_mixed_operation(`1 + x kg`,
+    operation(op(_,_,"+"),
+        int("1"),
+        operation(op(_,_,"kg"),
+            id("x")))).
+parse_mixed_operation(`1 + xkg`,
+    operation(op(_,_,"+"),
+        int("1"),
+        id("xkg"))).
+test("parse mixed operation", [nondet, forall(parse_mixed_operation(Text, Want)), Got = Want]) :-
+    units_ops(Ops),
+    phrase(expression(Ops, Got), Text).
+
 :- end_tests(kilanone).
