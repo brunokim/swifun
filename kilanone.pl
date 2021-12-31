@@ -78,6 +78,28 @@ punct_id_continue([]) --> [].
 
 % -----
 
+string_quote(0'").
+string_quote(0'').
+
+string(str(Str)) -->
+    [Ch], {string_quote(Ch)},
+    quoted(Ch, Chars),
+    [Ch],
+    {string_codes(Str, Chars)}.
+
+quoted(Delim, [Delim|Chars]) -->
+    [0'\\, Delim],
+    quoted(Delim, Chars).
+quoted(Delim, [0'\\|Chars]) -->
+    [0'\\, 0'\\],
+    quoted(Delim, Chars).
+quoted(Delim, [Ch|Chars]) -->
+    [Ch], {dif(Ch, Delim), dif(Ch, 0'\\)},
+    quoted(Delim, Chars).
+quoted(_, []) --> [].
+
+% -----
+
 op_associativity(none,  xfx).
 op_associativity(right, xfy).
 op_associativity(left,  yfx).
@@ -135,6 +157,7 @@ suffix_operator(Ops, MaxPrecedence, Op) :-
 atomic_expression(Ops, Tree) -->
     ( identifier(Tree)
     | int(Tree)
+    | string(Tree)
     | "(", ws, expression(Ops, Tree0), ws, ")",
       {Tree = paren(Tree0)}
     ).
@@ -187,6 +210,7 @@ remove_parens(operation(Op, Left0, Right0), operation(Op, Left, Right)) :-
     remove_parens(Right0, Right).
 remove_parens(int(X), int(X)).
 remove_parens(id(X), id(X)).
+remove_parens(str(X), str(X)).
 
 % An expression may be a single atomic expression, or an operation appearing as a list
 % of expressions.

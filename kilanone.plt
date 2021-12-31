@@ -27,6 +27,18 @@ parse_id(`<!>`, id("<!>")).
 test("parse a", [nondet, forall(parse_id(Text, Want)), Got = Want]) :-
     phrase(expression(Got), Text).
 
+parse_string(`"a"`, str("a")).
+parse_string(`'a'`, str("a")).
+parse_string(`'abc'`, str("abc")).
+parse_string(`'and for my next trick...'`, str("and for my next trick...")).
+parse_string(`'Edwin "Buzz" Aldrin'`, str("Edwin \"Buzz\" Aldrin")).
+parse_string(`"Edwin \\"Buzz\\" Aldrin"`, str("Edwin \"Buzz\" Aldrin")).
+parse_string(`"Hawai'i"`, str("Hawai'i")).
+parse_string(`'Hawai\\'i'`, str("Hawai'i")).
+parse_string(`'C:\\\\\\\\Users\\\\alice\\\\Documents\\\\'`, str("C:\\\\Users\\alice\\Documents\\")).
+test("parse string", [nondet, forall(parse_string(Text, Want)), Got = Want]) :-
+    phrase(expression(Got), Text).
+
 parse_infix_operation(`a+b`, operation(op(_,_,"+"), id("a"), id("b"))).
 parse_infix_operation(`a +b`, operation(op(_,_,"+"), id("a"), id("b"))).
 parse_infix_operation(`a+ b`, operation(op(_,_,"+"), id("a"), id("b"))).
