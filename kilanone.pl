@@ -288,17 +288,14 @@ filter_operators(Ops, SymbSet, ExprOps) :-
 % Remove parens from expression tree after operation is parsed.
 % Parens mark literal operators that should be treated just like identifiers, e.g.,
 % "add := (+)" is different from "add := +".
-remove_parens(paren(Expr0), Expr) :-
+remove_parens(paren(Expr0), Expr) :- !,
     remove_parens(Expr0, Expr).
-remove_parens(operation(Op, Expr0), operation(Op, Expr)) :-
+remove_parens(operation(Op, Expr0), operation(Op, Expr)) :- !,
     remove_parens(Expr0, Expr).
-remove_parens(operation(Op, Left0, Right0), operation(Op, Left, Right)) :-
+remove_parens(operation(Op, Left0, Right0), operation(Op, Left, Right)) :- !,
     remove_parens(Left0, Left),
     remove_parens(Right0, Right).
-remove_parens(int(X,Y), int(X,Y)).
-remove_parens(id(X), id(X)).
-remove_parens(str(X), str(X)).
-remove_parens(symb(X, Y), symb(X, Y)).
+remove_parens(X, X).
 
 % An expression may be a single atomic expression, or an operation appearing as a list
 % of expressions.
