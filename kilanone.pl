@@ -1,4 +1,4 @@
-:- module(kilanone, [expression//1, expression//2, statement//2]).
+:- module(kilanone, [expression//1, expression//2, statement//1, statement//2]).
 
 :- use_module(library(ordsets)).
 :- use_module(library(yall)).
@@ -34,6 +34,7 @@ letter(_).
 
 scope_separator --> "::".
 assignment_operator --> ":=".
+type_decl_operator --> ":".
 
 % -----
 
@@ -323,11 +324,22 @@ operation(ExprOps, MaxPrecedence, operation(Op, Left, Right)) -->
 
 % -----
 
+statement(Tree) -->
+    {base_operators(Ops)},
+    statement(Ops, Tree).
 statement(Ops, Tree) -->
     assignment(Ops, Tree)
+    | declaration(Ops, Tree)
     | expression_statement(Ops, Tree).
+
 assignment(Ops, assign(Symbol, Value)) -->
     symbol(Symbol),
     ws, assignment_operator, ws,
     expression(Ops, Value).
+
+declaration(Ops, decl(Symbol, Type)) -->
+    symbol(Symbol),
+    ws, type_decl_operator, ws,
+    expression(Ops, Type).
+
 expression_statement(Ops, expr_stmt(Tree)) --> expression(Ops, Tree).
