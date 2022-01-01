@@ -238,12 +238,12 @@ suffix_operator(Ops, MaxPrecedence, Op) :-
 % -----
 
 atomic_expression(Ops, Tree) -->
-    ( identifier(Tree)
-    | symbol(Tree)
-    | int(Tree)
+    ( int(Tree)
     | string(Tree)
     | "(", ws, expression(Ops, Tree0), ws, ")",
       {Tree = paren(Tree0)}
+    | identifier(Tree)
+    | symbol(Tree)
     ).
 
 % We need to check for termination first, so that when we reach the final
