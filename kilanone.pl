@@ -1,4 +1,4 @@
-:- module(kilanone, [expression//1, expression//2]).
+:- module(kilanone, [expression//1, expression//2, statement//2]).
 
 :- use_module(library(ordsets)).
 :- use_module(library(yall)).
@@ -322,3 +322,12 @@ operation(ExprOps, MaxPrecedence, operation(Op, Left, Right)) -->
     operation(ExprOps, RightPrecedence, Right).
 
 % -----
+
+statement(Ops, Tree) -->
+    assignment(Ops, Tree)
+    | expression_statement(Ops, Tree).
+assignment(Ops, assign(Symbol, Value)) -->
+    symbol(Symbol),
+    ws, assignment_operator, ws,
+    expression(Ops, Value).
+expression_statement(Ops, expr_stmt(Tree)) --> expression(Ops, Tree).

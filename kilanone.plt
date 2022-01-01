@@ -188,4 +188,14 @@ test("parse mixed operation", [nondet, forall(parse_mixed_operation(Text, Want))
     units_ops(Ops),
     phrase(expression(Ops, Got), Text).
 
+
+parse_assignment(`a := x`, assign(symb([], "a"), id("x"))).
+parse_assignment(`a:=x`, assign(symb([], "a"), id("x"))).
+parse_assignment(`::a := x`, assign(symb([root], "a"), id("x"))).
+parse_assignment(`obj::a := x`, assign(symb(["obj"], "a"), id("x"))).
+parse_assignment(`obj::a := obj::x`, assign(symb(["obj"], "a"), symb(["obj"], "x"))).
+test("parse assignment", [nondet, forall(parse_assignment(Text, Want)), Got = Want]) :-
+    units_ops(Ops),
+    phrase(statement(Ops, Got), Text).
+
 :- end_tests(kilanone).
