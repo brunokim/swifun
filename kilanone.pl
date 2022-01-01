@@ -59,23 +59,23 @@ int_continue([]) --> [].
 % -----
 
 identifier(id(Str)) -->
-    ( alnum_identifier(Chars)
-    | punct_identifier(Chars)
-    ),
-    {string_codes(Str, Chars)}.
+    alnum_identifier(Str)
+    | punct_identifier(Str).
 
-alnum_identifier([Ch|Chars]) -->
+alnum_identifier(Str) -->
     [Ch], {letter(Ch)}, !,
-    alnum_id_continue(Chars).
+    alnum_id_continue(Chars),
+    {string_codes(Str, [Ch|Chars])}.
 
 alnum_id_continue([Ch|Chars]) -->
     [Ch], {letter(Ch) ; digit(Ch)}, !,
     alnum_id_continue(Chars).
 alnum_id_continue([]) --> [].
 
-punct_identifier([Ch|Chars]) -->
+punct_identifier(Str) -->
     [Ch], {punct(Ch)},
-    punct_id_continue(Chars).
+    punct_id_continue(Chars),
+    {string_codes(Str, [Ch|Chars])}.
 
 punct_id_continue([Ch|Chars]) -->
     [Ch], {punct(Ch)},
@@ -107,13 +107,11 @@ symbol(symb([root|Scopes], Name)) -->
     identifier(id(Name)).
 
 symbol_scopes([Scope|Scopes]) -->
-    alnum_identifier(Chars), ws,
-    {string_codes(Scope, Chars)},
+    alnum_identifier(Scope), ws,
     scope_separator, ws,
     symbol_scopes(Scopes).
 symbol_scopes([Scope]) -->
-    alnum_identifier(Chars), ws,
-    {string_codes(Scope, Chars)},
+    alnum_identifier(Scope), ws,
     scope_separator.
 
 % -----
