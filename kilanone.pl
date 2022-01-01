@@ -174,14 +174,11 @@ string(str(Str)) -->
     [Ch],
     {string_codes(Str, Chars)}.
 
-quoted(Delim, [Delim|Chars]) -->
-    [0'\\, Delim],
-    quoted(Delim, Chars).
-quoted(Delim, [0'\\|Chars]) -->
-    [0'\\, 0'\\],
-    quoted(Delim, Chars).
 quoted(Delim, [Ch|Chars]) -->
-    [Ch], {dif(Ch, Delim), dif(Ch, 0'\\)},
+    ( [0'\\, Delim], {Ch=Delim}
+    | [0'\\, 0'\\], {Ch=0'\\}
+    | [Ch], {dif(Ch, Delim), dif(Ch, 0'\\)}
+    ),
     quoted(Delim, Chars).
 quoted(_, []) --> [].
 

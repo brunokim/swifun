@@ -219,6 +219,14 @@ test("parse declaration", [nondet, forall(parse_declaration(Text, Want)), Got = 
 parse_fail(`1_`).
 parse_fail(`0b_1`).
 parse_fail(`0b1_`).
+parse_fail(`"""`).
+parse_fail(`'''`).
+parse_fail(`"\\"`).
+parse_fail(`'\\'`).
+parse_fail(`"a\\"`).
+parse_fail(`'\\a'`).
+parse_fail(`'abc`).
+parse_fail(`abc'`).
 test("fail to parse expression", [nondet, fail, forall(parse_fail(Text))]) :-
     phrase(expression(_), Text).
 
