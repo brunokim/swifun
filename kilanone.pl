@@ -335,8 +335,8 @@ assignment(Ops, assign(Symbol, Value)) -->
     ws, assignment_operator, ws,
     expression(Ops, Value).
 
-declaration(Ops, decl(Symbol, Type)) -->
-    symbol(Symbol),
+declaration(Ops, decl(Name, Type)) -->
+    identifier(id(Name)),
     ws, type_decl_operator, ws,
     expression(Ops, Type).
 
