@@ -1,15 +1,21 @@
 :- begin_tests(kilanone).
 :- use_module(kilanone).
 
-parse_int(`1`, int("1")).
-parse_int(`10`, int("10")).
-parse_int(`123_456`, int("123456")).
-parse_int(`1___0`, int("10")).
-parse_int(`(1)`, int("1")).
-parse_int(`( 1)`, int("1")).
-parse_int(`(1 )`, int("1")).
-parse_int(`( 1 )`, int("1")).
-parse_int(`((1))`, int("1")).
+parse_int(`1`, int("1", 10)).
+parse_int(`10`, int("10", 10)).
+parse_int(`123_456`, int("123456", 10)).
+parse_int(`1___0`, int("10", 10)).
+parse_int(`(1)`, int("1", 10)).
+parse_int(`( 1)`, int("1", 10)).
+parse_int(`(1 )`, int("1", 10)).
+parse_int(`( 1 )`, int("1", 10)).
+parse_int(`((1))`, int("1", 10)).
+parse_int(`1_`, int("1", 10)).  % TODO: fix this
+parse_int(`0b0`, int("0", 2)).
+parse_int(`0b1`, int("1", 2)).
+parse_int(`0o075`, int("075", 8)).
+parse_int(`0d123_456`, int("123456", 10)).
+parse_int(`0x1ac4_BEEF`, int("1ac4BEEF", 16)).
 test("parse int", [nondet, forall(parse_int(Text, Want)), Got = Want]) :-
     phrase(expression(Got), Text).
 
@@ -160,14 +166,14 @@ units_ops([
 parse_mixed_operation(`-10kg`,
     operation(op(_,_,"kg"),
         operation(op(_,_,"-"),
-            int("10")))).
+            int("10", 10)))).
 parse_mixed_operation(`+ x kg`,
     operation(op(_,_,"kg"),
         operation(op(_,_,"+"),
             id("x")))).
 parse_mixed_operation(`1 + x kg`,
     operation(op(_,_,"+"),
-        int("1"),
+        int("1", 10),
         operation(op(_,_,"kg"),
             id("x")))).
 parse_mixed_operation(`not x + y kg`,

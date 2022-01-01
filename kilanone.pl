@@ -5,10 +5,30 @@
 
 :- discontiguous term_expansion/2.
 
-% Expands into digit/1 facts.
-term_expansion(digit(_), Clauses) :-
-    findall(digit(Ch), string_code(_, "0123456789", Ch), Clauses).
-digit(_).
+% Expands into binary_digit/1 facts.
+term_expansion(binary_digit(_), Clauses) :-
+    findall(binary_digit(Ch), string_code(_, "01", Ch), Clauses).
+binary_digit(_).
+
+% Expands into octal_digit/1 facts.
+term_expansion(octal_digit(_), Clauses) :-
+    findall(octal_digit(Ch), string_code(_, "01234567", Ch), Clauses).
+octal_digit(_).
+
+% Expands into decimal_digit/1 facts.
+term_expansion(decimal_digit(_), Clauses) :-
+    findall(decimal_digit(Ch), string_code(_, "0123456789", Ch), Clauses).
+decimal_digit(_).
+
+% Expands into hex_digit/1 facts.
+term_expansion(hex_digit(_), Clauses) :-
+    findall(hex_digit(Ch), string_code(_, "0123456789abcdefABCDEF", Ch), Clauses).
+hex_digit(_).
+
+digit(X, 2) :- binary_digit(X).
+digit(X, 8) :- octal_digit(X).
+digit(X, 10) :- decimal_digit(X).
+digit(X, 16) :- hex_digit(X).
 
 % Expands into space/1 facts.
 term_expansion(space(_), Clauses) :-
@@ -45,16 +65,37 @@ ws --> [].
 % -----
 
 % Ints must start and end with a digit. Underlines must be always in the middle of an integer.
-int(int(Str)) -->
-    [Ch], {digit(Ch)}, !,
-    int_continue(Chars),
+% 
+% Valid ints:
+% 0
+% 01
+% 510
+% 5_100
+% 0d1234567890
+% 0d1_234_567_890
+% 0b0110_0001
+% 0xABCD_EF01_2345_6789
+% 0o775
+int(int(Str, Base)) -->
+    (   "0b", {Base=2}
+    |   "0o", {Base=8}
+    |   "0d", {Base=10}
+    |   "0x", {Base=16}
+    ),
+    [Ch], {digit(Ch, Base)},
+    int_continue(Chars, Base),
     {string_codes(Str, [Ch|Chars])}.
 
-int_continue([Ch|Chars]) -->
-    [Ch], {digit(Ch)}, !, int_continue(Chars).
-int_continue(Chars) -->
-    [0'_], int_continue(Chars).
-int_continue([]) --> [].
+int(int(Str, 10)) -->
+    [Ch], {digit(Ch, 10)},
+    int_continue(Chars, 10),
+    {string_codes(Str, [Ch|Chars])}.
+
+int_continue([Ch|Chars], Base) -->
+    [Ch], {digit(Ch, Base)}, int_continue(Chars, Base).
+int_continue(Chars, Base) -->
+    [0'_], int_continue(Chars, Base).
+int_continue([], _) --> [].
 
 % -----
 
@@ -68,7 +109,7 @@ alnum_identifier(Str) -->
     {string_codes(Str, [Ch|Chars])}.
 
 alnum_id_continue([Ch|Chars]) -->
-    [Ch], {letter(Ch) ; digit(Ch)}, !,
+    [Ch], {letter(Ch) ; digit(Ch, 10)}, !,
     alnum_id_continue(Chars).
 alnum_id_continue([]) --> [].
 
@@ -246,7 +287,7 @@ remove_parens(operation(Op, Expr0), operation(Op, Expr)) :-
 remove_parens(operation(Op, Left0, Right0), operation(Op, Left, Right)) :-
     remove_parens(Left0, Left),
     remove_parens(Right0, Right).
-remove_parens(int(X), int(X)).
+remove_parens(int(X,Y), int(X,Y)).
 remove_parens(id(X), id(X)).
 remove_parens(str(X), str(X)).
 remove_parens(symb(X, Y), symb(X, Y)).
