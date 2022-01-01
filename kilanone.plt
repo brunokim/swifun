@@ -10,7 +10,6 @@ parse_int(`( 1)`, int("1", 10)).
 parse_int(`(1 )`, int("1", 10)).
 parse_int(`( 1 )`, int("1", 10)).
 parse_int(`((1))`, int("1", 10)).
-parse_int(`1_`, int("1", 10)).  % TODO: fix this
 parse_int(`0b0`, int("0", 2)).
 parse_int(`0b1`, int("1", 2)).
 parse_int(`0o075`, int("075", 8)).
@@ -194,6 +193,7 @@ test("parse mixed operation", [nondet, forall(parse_mixed_operation(Text, Want))
     units_ops(Ops),
     phrase(expression(Ops, Got), Text).
 
+% -----
 
 parse_assignment(`a := x`, assign(symb([], "a"), id("x"))).
 parse_assignment(`a:=x`, assign(symb([], "a"), id("x"))).
@@ -213,5 +213,13 @@ parse_declaration(`this_or_that: X+Y`,
             id("Y")))).
 test("parse declaration", [nondet, forall(parse_declaration(Text, Want)), Got = Want]) :-
     phrase(statement(Got), Text).
+
+% -----
+
+parse_fail(`1_`).
+parse_fail(`0b_1`).
+parse_fail(`0b1_`).
+test("fail to parse expression", [nondet, fail, forall(parse_fail(Text))]) :-
+    phrase(expression(_), Text).
 
 :- end_tests(kilanone).

@@ -3,6 +3,11 @@
 :- use_module(library(ordsets)).
 :- use_module(library(yall)).
 
+% Peeks at the next character without consuming it.
+peek(Ch), [Ch] --> [Ch].
+
+% -----
+
 :- discontiguous term_expansion/2.
 
 % Expands into binary_digit/1 facts.
@@ -92,9 +97,12 @@ int(int(Str, 10)) -->
     {string_codes(Str, [Ch|Chars])}.
 
 int_continue([Ch|Chars], Base) -->
-    [Ch], {digit(Ch, Base)}, int_continue(Chars, Base).
+    [Ch], {digit(Ch, Base)}, !,
+    int_continue(Chars, Base).
 int_continue(Chars, Base) -->
-    [0'_], int_continue(Chars, Base).
+    [0'_],
+    peek(Ch), {Ch == 0'_ ; digit(Ch, Base)},
+    int_continue(Chars, Base).
 int_continue([], _) --> [].
 
 % -----
