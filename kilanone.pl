@@ -17,12 +17,12 @@ space(_).
 
 % Expands into punct/1 facts.
 term_expansion(punct(_), Clauses) :-
-    findall(punct(Ch), string_code(_, "!#$%&*+-/:<=>?@\\^|~", Ch), Clauses).
+    findall(punct(Ch), string_code(_, "!#$%&*+-/<=>?@\\^|~", Ch), Clauses).
 punct(_).
 
 % Expands into syntax_char/1 facts.
 term_expansion(syntax_char(_), Clauses) :-
-    findall(syntax_char(Ch), string_code(_, "\"'(),.;[]`{}", Ch), Clauses).
+    findall(syntax_char(Ch), string_code(_, "\"'(),.:;[]`{}", Ch), Clauses).
 syntax_char(_).
 
 % Expands into letter/1 facts.
@@ -32,20 +32,25 @@ letter(_).
 
 % -----
 
+scope_separator --> "::".
+assignment_operator --> ":=".
+
+% -----
+
 % Whitespace
-ws --> [Ch], {space(Ch)}, ws.
+ws --> [Ch], {space(Ch)}, !, ws.
 ws --> [].
 
 % -----
 
 % Ints must start and end with a digit. Underlines must be always in the middle of an integer.
 int(int(Str)) -->
-    [Ch], {digit(Ch)},
+    [Ch], {digit(Ch)}, !,
     int_continue(Chars),
     {string_codes(Str, [Ch|Chars])}.
 
 int_continue([Ch|Chars]) -->
-    [Ch], {digit(Ch)}, int_continue(Chars).
+    [Ch], {digit(Ch)}, !, int_continue(Chars).
 int_continue(Chars) -->
     [0'_], int_continue(Chars).
 int_continue([]) --> [].
@@ -59,11 +64,11 @@ identifier(id(Str)) -->
     {string_codes(Str, Chars)}.
 
 alnum_identifier([Ch|Chars]) -->
-    [Ch], {letter(Ch)},
+    [Ch], {letter(Ch)}, !,
     alnum_id_continue(Chars).
 
 alnum_id_continue([Ch|Chars]) -->
-    [Ch], {letter(Ch) ; digit(Ch)},
+    [Ch], {letter(Ch) ; digit(Ch)}, !,
     alnum_id_continue(Chars).
 alnum_id_continue([]) --> [].
 
@@ -75,6 +80,40 @@ punct_id_continue([Ch|Chars]) -->
     [Ch], {punct(Ch)},
     punct_id_continue(Chars).
 punct_id_continue([]) --> [].
+
+% -----
+
+% Valid symbols:
+%   abc
+%   <=>
+%   ::abc
+%   ::+
+%   ns::abc
+%   ::ns::abc
+%   ns1::ns2::ns3::abc
+%   
+symbol(symb([], Name)) -->
+    identifier(id(Name)).
+symbol(symb([root], Name)) -->
+    scope_separator, ws,
+    identifier(id(Name)).
+symbol(symb(Scopes, Name)) -->
+    symbol_scopes(Scopes), ws,
+    identifier(id(Name)).
+symbol(symb([root|Scopes], Name)) -->
+    scope_separator, ws,
+    symbol_scopes(Scopes), ws,
+    identifier(id(Name)).
+
+symbol_scopes([Scope|Scopes]) -->
+    alnum_identifier(Chars), ws,
+    {string_codes(Scope, Chars)},
+    scope_separator, ws,
+    symbol_scopes(Scopes).
+symbol_scopes([Scope]) -->
+    alnum_identifier(Chars), ws,
+    {string_codes(Scope, Chars)},
+    scope_separator.
 
 % -----
 
@@ -117,7 +156,6 @@ op_pos(suffix, xf).
 op_pos(suffix, yf). 
 
 base_operators([
-    op( 990, xfx, ":="),
     op( 900,  fy, "not"),
     op( 700, xfx, "<"),
     op( 700, xfx, ">"),
@@ -156,6 +194,7 @@ suffix_operator(Ops, MaxPrecedence, Op) :-
 
 atomic_expression(Ops, Tree) -->
     ( identifier(Tree)
+    | symbol(Tree)
     | int(Tree)
     | string(Tree)
     | "(", ws, expression(Ops, Tree0), ws, ")",
@@ -211,6 +250,7 @@ remove_parens(operation(Op, Left0, Right0), operation(Op, Left, Right)) :-
 remove_parens(int(X), int(X)).
 remove_parens(id(X), id(X)).
 remove_parens(str(X), str(X)).
+remove_parens(symb(X, Y), symb(X, Y)).
 
 % An expression may be a single atomic expression, or an operation appearing as a list
 % of expressions.

@@ -39,6 +39,17 @@ parse_string(`'C:\\\\\\\\Users\\\\alice\\\\Documents\\\\'`, str("C:\\\\Users\\al
 test("parse string", [nondet, forall(parse_string(Text, Want)), Got = Want]) :-
     phrase(expression(Got), Text).
 
+parse_symbol(`::a`, symb([root], "a")).
+parse_symbol(`:: a`, symb([root], "a")).
+parse_symbol(`ns::a`, symb(["ns"], "a")).
+parse_symbol(`ns :: a`, symb(["ns"], "a")).
+parse_symbol(`::ns::a`, symb([root, "ns"], "a")).
+parse_symbol(`ns1::ns2::a`, symb(["ns1", "ns2"], "a")).
+parse_symbol(`::ns1::ns2::a`, symb([root, "ns1", "ns2"], "a")).
+parse_symbol(`:: ns1 :: ns2 ::  a`, symb([root, "ns1", "ns2"], "a")).
+test("parse symbol", [nondet, forall(parse_symbol(Text, Want)), Got = Want]) :-
+    phrase(expression(Got), Text).
+
 parse_infix_operation(`a+b`, operation(op(_,_,"+"), id("a"), id("b"))).
 parse_infix_operation(`a +b`, operation(op(_,_,"+"), id("a"), id("b"))).
 parse_infix_operation(`a+ b`, operation(op(_,_,"+"), id("a"), id("b"))).
