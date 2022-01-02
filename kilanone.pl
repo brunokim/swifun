@@ -61,7 +61,7 @@ scope_separator --> "::".
 assignment_operator --> ":=".
 type_decl_operator --> ":".
 func_operator --> "fn".
-call_operator --> ".".
+method_operator --> ".".
 
 % -----
 
@@ -222,15 +222,15 @@ param(Ops, Param) --> declaration(Ops, Param).
 
 % -----
 
-:- table funcall//2.
+:- table method//2, funcall//2.
 
-funcall(Ops, call(Obj, Method, Args)) -->
+method(Ops, method(Obj, Method)) -->
     expression(Ops, Obj), ws,
-    call_operator, ws,
-    identifier(id(Method)), ws,
-    args(Ops, Args).
-funcall(Ops, call(Obj, "", Args)) -->
-    expression(Ops, Obj), ws,
+    method_operator, ws,
+    identifier(id(Method)).
+
+funcall(Ops, call(Func, Args)) -->
+    expression(Ops, Func), ws,
     args(Ops, Args).
 
 args(Ops, Args) --> "(", ws, args_(Ops, Args), ws, ")".
@@ -305,6 +305,7 @@ atomic_expression(Ops, Tree) -->
       {Tree = paren(Tree0)}
     | func(Ops, Tree)
     | funcall(Ops, Tree)
+    | method(Ops, Tree)
     | identifier(Tree)
     | symbol(Tree)
     ).
