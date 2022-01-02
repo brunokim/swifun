@@ -214,6 +214,20 @@ parse_declaration(`this_or_that: X+Y`,
 test("parse declaration", [nondet, forall(parse_declaration(Text, Want)), Got = Want]) :-
     phrase(statement(Got), Text).
 
+parse_block(`{}`, block([])).
+parse_block(`{ }`, block([])).
+parse_block(`{;}`, block([nil])).
+parse_block(`{ ;}`, block([nil])).
+parse_block(`{; }`, block([nil])).
+parse_block(`{a}`, block([expr_stmt(id("a"))])).
+parse_block(`{a;}`, block([expr_stmt(id("a")), nil])).
+parse_block(`{;a}`, block([nil, expr_stmt(id("a"))])).
+parse_block(`{; a}`, block([nil, expr_stmt(id("a"))])).
+parse_block(`{;;a}`, block([nil, nil, expr_stmt(id("a"))])).
+parse_block(`{a;b}`, block([expr_stmt(id("a")), expr_stmt(id("b"))])).
+test("parse block", [nondet, forall(parse_block(Text, Want)), Got = Want]) :-
+    phrase(statement(Got), Text).
+
 % -----
 
 parse_fail(`1_`).

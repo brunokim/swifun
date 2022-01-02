@@ -361,9 +361,27 @@ statement(Tree) -->
     {base_operators(Ops)},
     statement(Ops, Tree).
 statement(Ops, Tree) -->
-    assignment(Ops, Tree)
+    block(Ops, Tree)
+    | assignment(Ops, Tree)
     | declaration(Ops, Tree)
     | expression_statement(Ops, Tree).
+
+block(Ops, block(Stmts)) -->
+    "{", ws, statements(Ops, Stmts), ws, "}".
+
+statements(_, []) --> [].
+statements(Ops, Stmts) --> statements_(Ops, Stmts).
+
+statements_(Ops, [Stmt|Stmts]) -->
+    statement(Ops, Stmt), ws,
+    ";", ws,
+    statements_(Ops, Stmts).
+statements_(Ops, [nil|Stmts]) -->
+    ";", ws,
+    statements_(Ops, Stmts).
+statements_(Ops, [Stmt, nil]) --> statement(Ops, Stmt), ws, ";".
+statements_(Ops, [Stmt]) --> statement(Ops, Stmt).
+statements_(_, [nil]) --> ";".
 
 assignment(Ops, assign(Symbol, Value)) -->
     symbol(Symbol),
