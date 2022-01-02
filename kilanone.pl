@@ -82,10 +82,10 @@ ws --> [].
 % 0xABCD_EF01_2345_6789
 % 0o775
 int(int(Str, Base)) -->
-    (   "0b", {Base=2}
-    |   "0o", {Base=8}
-    |   "0d", {Base=10}
-    |   "0x", {Base=16}
+    ( "0b", {Base=2}
+    | "0o", {Base=8}
+    | "0d", {Base=10}
+    | "0x", {Base=16}
     ),
     [Ch], {digit(Ch, Base)},
     int_continue(Chars, Base),
@@ -246,19 +246,11 @@ atomic_expression(Ops, Tree) -->
     | symbol(Tree)
     ).
 
-% We need to check for termination first, so that when we reach the final
-% symbol in a series of atomic expressions, it is accepted greedily. That is,
-% the text `... abcd)` matches first ["abcd"] with rest `)`.
-%
-% If we use the other order, we would first fail, because we'd expect an additional
-% symbol after ws. The first one to match is ["abc", "d"], which may be valid if 'd'
-% is a suffix operator. This doesn't correspond to our expectations that symbols
-% are consumed greedily.
-atomic_expressions(Ops, [Expr]) --> atomic_expression(Ops, Expr).
 atomic_expressions(Ops, [Expr|Exprs]) -->
     atomic_expression(Ops, Expr),
     ws,
     atomic_expressions(Ops, Exprs).
+atomic_expressions(Ops, [Expr]) --> atomic_expression(Ops, Expr).
 
 % Checks if a list of atomic expressions may be a possible operation, by
 % checking that each pair of consecutive elements has at least one identifier.
