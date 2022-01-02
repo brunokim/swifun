@@ -60,6 +60,7 @@ letter(_).
 scope_separator --> "::".
 assignment_operator --> ":=".
 type_decl_operator --> ":".
+func_operator --> "fn".
 
 % -----
 
@@ -184,6 +185,42 @@ quoted(_, []) --> [].
 
 % -----
 
+block(Ops, block(Stmts)) -->
+    "{", ws, statements(Ops, Stmts), ws, "}".
+
+statements(Ops, Stmts) --> statements_(Ops, Stmts).
+statements(_, []) --> [].
+
+statements_(Ops, [Stmt|Stmts]) -->
+    statement(Ops, Stmt), ws,
+    ";", ws,
+    statements_(Ops, Stmts).
+statements_(Ops, [nil|Stmts]) -->
+    ";", ws,
+    statements_(Ops, Stmts).
+statements_(Ops, [Stmt, nil]) --> statement(Ops, Stmt), ws, ";".
+statements_(Ops, [Stmt]) --> statement(Ops, Stmt).
+statements_(_, [nil]) --> ";".
+
+% -----
+
+func(Ops, func(Params, Body)) -->
+    func_operator,
+    params(Ops, Params), ws,
+    expression(Ops, Body).
+
+params(Ops, Params) --> "[", ws, params_(Ops, Params), ws, "]".
+params(_, []) --> "[", ws, "]".
+
+params_(Ops, [Param]) --> param(Ops, Param).
+params_(Ops, [Param]) --> param(Ops, Param), ws, ",".
+params_(Ops, [Param|Params]) --> param(Ops, Param), ws, ",", ws, params_(Ops, Params).
+
+param(_, Param) --> identifier(Param).
+param(Ops, Param) --> declaration(Ops, Param).
+
+% -----
+
 op_associativity(none,  xfx).
 op_associativity(right, xfy).
 op_associativity(left,  yfx).
@@ -240,8 +277,10 @@ suffix_operator(Ops, MaxPrecedence, Op) :-
 atomic_expression(Ops, Tree) -->
     ( int(Tree)
     | string(Tree)
+    | block(Ops, Tree)
     | "(", ws, expression(Ops, Tree0), ws, ")",
       {Tree = paren(Tree0)}
+    | func(Ops, Tree)
     | identifier(Tree)
     | symbol(Tree)
     ).
@@ -361,27 +400,9 @@ statement(Tree) -->
     {base_operators(Ops)},
     statement(Ops, Tree).
 statement(Ops, Tree) -->
-    block(Ops, Tree)
-    | assignment(Ops, Tree)
+    assignment(Ops, Tree)
     | declaration(Ops, Tree)
     | expression_statement(Ops, Tree).
-
-block(Ops, block(Stmts)) -->
-    "{", ws, statements(Ops, Stmts), ws, "}".
-
-statements(_, []) --> [].
-statements(Ops, Stmts) --> statements_(Ops, Stmts).
-
-statements_(Ops, [Stmt|Stmts]) -->
-    statement(Ops, Stmt), ws,
-    ";", ws,
-    statements_(Ops, Stmts).
-statements_(Ops, [nil|Stmts]) -->
-    ";", ws,
-    statements_(Ops, Stmts).
-statements_(Ops, [Stmt, nil]) --> statement(Ops, Stmt), ws, ";".
-statements_(Ops, [Stmt]) --> statement(Ops, Stmt).
-statements_(_, [nil]) --> ";".
 
 assignment(Ops, assign(Symbol, Value)) -->
     symbol(Symbol),

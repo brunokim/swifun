@@ -55,6 +55,32 @@ parse_symbol(`:: ns1 :: ns2 ::  a`, symb([root, "ns1", "ns2"], "a")).
 test("parse symbol", [nondet, forall(parse_symbol(Text, Want)), Got = Want]) :-
     phrase(expression(Got), Text).
 
+parse_block(`{}`, block([])).
+parse_block(`{ }`, block([])).
+parse_block(`{;}`, block([nil])).
+parse_block(`{ ;}`, block([nil])).
+parse_block(`{; }`, block([nil])).
+parse_block(`{a}`, block([expr_stmt(id("a"))])).
+parse_block(`{a;}`, block([expr_stmt(id("a")), nil])).
+parse_block(`{;a}`, block([nil, expr_stmt(id("a"))])).
+parse_block(`{; a}`, block([nil, expr_stmt(id("a"))])).
+parse_block(`{;;a}`, block([nil, nil, expr_stmt(id("a"))])).
+parse_block(`{a;b}`, block([expr_stmt(id("a")), expr_stmt(id("b"))])).
+test("parse block", [nondet, forall(parse_block(Text, Want)), Got = Want]) :-
+    phrase(expression(Got), Text).
+
+parse_func(`fn[]1`, func([], int("1", 10))).
+parse_func(`fn[]x`, func([], id("x"))).
+parse_func(`fn[x]x`, func([id("x")], id("x"))).
+parse_func(`fn[x:Int]x`, func([decl("x", id("Int"))], id("x"))).
+parse_func(`fn[x:Int,]x`, func([decl("x", id("Int"))], id("x"))).
+parse_func(`fn[ x:Int , ] x`, func([decl("x", id("Int"))], id("x"))).
+parse_func(`fn[x, y] x`, func([id("x"), id("y")], id("x"))).
+parse_func(`fn[x, y:Int] x`, func([id("x"), decl("y", id("Int"))], id("x"))).
+parse_func(`fn[x, y:Int,] x`, func([id("x"), decl("y", id("Int"))], id("x"))).
+test("parse func", [nondet, forall(parse_func(Text, Want)), Got = Want]) :-
+    phrase(expression(Got), Text).
+
 parse_infix_operation(`a+b`, operation(op(_,_,"+"), id("a"), id("b"))).
 parse_infix_operation(`a +b`, operation(op(_,_,"+"), id("a"), id("b"))).
 parse_infix_operation(`a+ b`, operation(op(_,_,"+"), id("a"), id("b"))).
@@ -213,21 +239,6 @@ parse_declaration(`this_or_that: X+Y`,
             id("Y")))).
 test("parse declaration", [nondet, forall(parse_declaration(Text, Want)), Got = Want]) :-
     phrase(statement(Got), Text).
-
-parse_block(`{}`, block([])).
-parse_block(`{ }`, block([])).
-parse_block(`{;}`, block([nil])).
-parse_block(`{ ;}`, block([nil])).
-parse_block(`{; }`, block([nil])).
-parse_block(`{a}`, block([expr_stmt(id("a"))])).
-parse_block(`{a;}`, block([expr_stmt(id("a")), nil])).
-parse_block(`{;a}`, block([nil, expr_stmt(id("a"))])).
-parse_block(`{; a}`, block([nil, expr_stmt(id("a"))])).
-parse_block(`{;;a}`, block([nil, nil, expr_stmt(id("a"))])).
-parse_block(`{a;b}`, block([expr_stmt(id("a")), expr_stmt(id("b"))])).
-test("parse block", [nondet, forall(parse_block(Text, Want)), Got = Want]) :-
-    phrase(statement(Got), Text).
-
 % -----
 
 parse_fail(`1_`).
@@ -241,6 +252,10 @@ parse_fail(`"a\\"`).
 parse_fail(`'\\a'`).
 parse_fail(`'abc`).
 parse_fail(`abc'`).
+parse_fail(`fn []1`).
+parse_fail(`fn[,]1`).
+parse_fail(`fn[1,]1`).
+parse_fail(`fn[x,,]1`).
 test("fail to parse expression", [nondet, fail, forall(parse_fail(Text))]) :-
     phrase(expression(_), Text).
 
