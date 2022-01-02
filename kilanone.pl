@@ -244,21 +244,14 @@ argument(Ops, Arg) --> expression(Ops, Arg).
 
 % -----
 
-op_associativity(none,  xfx).
-op_associativity(right, xfy).
-op_associativity(left,  yfx).
-op_associativity(none,  fx).
-op_associativity(right, fy).
-op_associativity(none,  xf).
-op_associativity(left,  yf).
-
-op_pos(infix, xfx).
-op_pos(infix, xfy).
-op_pos(infix, yfx).
-op_pos(prefix, fx).
-op_pos(prefix, fy).
-op_pos(suffix, xf).
-op_pos(suffix, yf).
+% type, position, associativity
+op_type(xfx, infix, none).
+op_type(xfy, infix, right).
+op_type(yfx, infix, left).
+op_type(fx, prefix, none).
+op_type(fy, prefix, right).
+op_type(xf, suffix, none).
+op_type(yf, suffix, left).
 
 base_operators([
     op( 900,  fy, "not"),
@@ -283,7 +276,7 @@ base_operators([
 get_operator(Ops, Pos, MaxPrecedence, Op) :-
     member(Op, Ops),
     Op = op(Precedence, Type, _),
-    op_pos(Pos, Type),
+    op_type(Type, Pos, _),
     Precedence =< MaxPrecedence.
 
 infix_operator(Ops, MaxPrecedence, Op) :-
@@ -380,7 +373,7 @@ expression(Ops, Tree) -->
 :- table operation//3.
 
 op_precedence(op(Precedence, Type, _), LeftPrecedence, RightPrecedence) :-
-    op_associativity(Associativity, Type),
+    op_type(Type, _, Associativity),
     ( Associativity = none  -> LeftPrecedence is Precedence-1, RightPrecedence is Precedence-1
     ; Associativity = right -> LeftPrecedence is Precedence-1, RightPrecedence is Precedence
     ; Associativity = left  -> LeftPrecedence is Precedence,   RightPrecedence is Precedence-1
