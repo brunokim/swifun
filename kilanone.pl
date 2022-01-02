@@ -61,6 +61,7 @@ scope_separator --> "::".
 assignment_operator --> ":=".
 type_decl_operator --> ":".
 func_operator --> "fn".
+call_operator --> ".".
 
 % -----
 
@@ -71,7 +72,7 @@ ws --> [].
 % -----
 
 % Ints must start and end with a digit. Underlines must be always in the middle of an integer.
-% 
+%
 % Valid ints:
 % 0
 % 01
@@ -142,7 +143,7 @@ punct_id_continue([]) --> [].
 %   ns::abc
 %   ::ns::abc
 %   ns1::ns2::ns3::abc
-%   
+%
 symbol(symb([], Name)) -->
     identifier(id(Name)).
 symbol(symb([root], Name)) -->
@@ -221,6 +222,28 @@ param(Ops, Param) --> declaration(Ops, Param).
 
 % -----
 
+:- table funcall//2.
+
+funcall(Ops, call(Obj, Method, Args)) -->
+    expression(Ops, Obj), ws,
+    call_operator, ws,
+    identifier(id(Method)), ws,
+    args(Ops, Args).
+funcall(Ops, call(Obj, "", Args)) -->
+    expression(Ops, Obj), ws,
+    args(Ops, Args).
+
+args(Ops, Args) --> "(", ws, args_(Ops, Args), ws, ")".
+args(_, []) --> "(", ws, ")".
+
+args_(Ops, [Arg]) --> argument(Ops, Arg).
+args_(Ops, [Arg]) --> argument(Ops, Arg), ws, ",".
+args_(Ops, [Arg|Args]) --> argument(Ops, Arg), ws, ",", ws, args_(Ops, Args).
+
+argument(Ops, Arg) --> expression(Ops, Arg).
+
+% -----
+
 op_associativity(none,  xfx).
 op_associativity(right, xfy).
 op_associativity(left,  yfx).
@@ -232,10 +255,10 @@ op_associativity(left,  yf).
 op_pos(infix, xfx).
 op_pos(infix, xfy).
 op_pos(infix, yfx).
-op_pos(prefix, fx). 
-op_pos(prefix, fy). 
-op_pos(suffix, xf). 
-op_pos(suffix, yf). 
+op_pos(prefix, fx).
+op_pos(prefix, fy).
+op_pos(suffix, xf).
+op_pos(suffix, yf).
 
 base_operators([
     op( 900,  fy, "not"),
@@ -281,6 +304,7 @@ atomic_expression(Ops, Tree) -->
     | "(", ws, expression(Ops, Tree0), ws, ")",
       {Tree = paren(Tree0)}
     | func(Ops, Tree)
+    | funcall(Ops, Tree)
     | identifier(Tree)
     | symbol(Tree)
     ).
@@ -415,3 +439,5 @@ declaration(Ops, decl(Name, Type)) -->
     expression(Ops, Type).
 
 expression_statement(Ops, expr_stmt(Tree)) --> expression(Ops, Tree).
+
+% -----

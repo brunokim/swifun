@@ -81,6 +81,24 @@ parse_func(`fn[x, y:Int,] x`, func([id("x"), decl("y", id("Int"))], id("x"))).
 test("parse func", [nondet, forall(parse_func(Text, Want)), Got = Want]) :-
     phrase(expression(Got), Text).
 
+parse_call(`f()`, call(id("f"), "", [])).
+parse_call(`f ()`, call(id("f"), "", [])).
+parse_call(`f ( )`, call(id("f"), "", [])).
+parse_call(`f ( )`, call(id("f"), "", [])).
+parse_call(`obj.m1()`, call(id("obj"), "m1", [])).
+parse_call(`obj . m1 ( )`, call(id("obj"), "m1", [])).
+parse_call(`obj.m1().m2()`, call(call(id("obj"), "m1", []), "m2", [])).
+parse_call(`fn[]f()`, func([], call(id("f"), "", []))).
+parse_call(`(fn[]f)()`, call(func([], id("f")), "", [])).
+parse_call(`f(a)`, call(id("f"), "", [id("a")])).
+parse_call(`f(a,)`, call(id("f"), "", [id("a")])).
+parse_call(`f( a , )`, call(id("f"), "", [id("a")])).
+parse_call(`f(a,b)`, call(id("f"), "", [id("a"), id("b")])).
+parse_call(`f(a,b+c)`, call(id("f"), "", [id("a"), operation(op(_,_,"+"), id("b"), id("c"))])).
+parse_call(`f(a,g(b))`, call(id("f"), "", [id("a"), call(id("g"), "", [id("b")])])).
+test("parse call", [nondet, forall(parse_call(Text, Want)), Got = Want]) :-
+    phrase(expression(Got), Text).
+
 parse_infix_operation(`a+b`, operation(op(_,_,"+"), id("a"), id("b"))).
 parse_infix_operation(`a +b`, operation(op(_,_,"+"), id("a"), id("b"))).
 parse_infix_operation(`a+ b`, operation(op(_,_,"+"), id("a"), id("b"))).
@@ -256,6 +274,7 @@ parse_fail(`fn []1`).
 parse_fail(`fn[,]1`).
 parse_fail(`fn[1,]1`).
 parse_fail(`fn[x,,]1`).
+parse_fail(`obj.(a)`).
 test("fail to parse expression", [nondet, fail, forall(parse_fail(Text))]) :-
     phrase(expression(_), Text).
 
