@@ -266,6 +266,40 @@ parse_declaration(`this_or_that: X+Y`,
             id("Y")))).
 test("parse declaration", [nondet, forall(parse_declaration(Text, Want)), Got = Want]) :-
     phrase(statement(Got), Text).
+
+% -----
+
+parse_program(`
+    fibo := fn[x:Int] {
+        if(x < 2,
+            fn[] 1,
+            fn[] {
+                a := x - 2;
+                b := x - 1;
+                fibo(a) + fibo(b)
+            },
+        )
+    };
+    fibo(10)
+`, prog([
+    assign(
+        symb([], "fibo"),
+        func([decl("x", id("Int"))], block([
+            expr_stmt(call(id("if"), [
+                operation(op(_,_,"<"), id("x"), int("2", 10)),
+                func([], int("1", 10)),
+                func([], block([
+                    assign(symb([],"a"), operation(op(_,_,"-"), id("x"), int("2", 10))),
+                    assign(symb([],"b"), operation(op(_,_,"-"), id("x"), int("1", 10))),
+                    expr_stmt(operation(op(_,_,"+"),
+                        call(id("fibo"), [id("a")]),
+                        call(id("fibo"), [id("b")])))]))]))]))),
+    expr_stmt(call(id("fibo"), [
+        int("10", 10)]))])
+).
+test("parse program", [nondet, forall(parse_program(Text, Want)), Got = Want]) :-
+    phrase(program(Got), Text).
+
 % -----
 
 parse_fail(`1_`).

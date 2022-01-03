@@ -1,4 +1,4 @@
-:- module(kilanone, [expression//1, expression//2, statement//1, statement//2]).
+:- module(kilanone, [expression//1, expression//2, statement//1, statement//2, program//1]).
 
 :- use_module(library(ordsets)).
 :- use_module(library(yall)).
@@ -146,13 +146,15 @@ punct_id_continue([]) --> [].
 %
 symbol(symb([], Name)) -->
     identifier(id(Name)).
-symbol(symb([root], Name)) -->
+symbol(Tree) --> scoped_symbol(Tree).
+
+scoped_symbol(symb([root], Name)) -->
     scope_separator, ws,
     identifier(id(Name)).
-symbol(symb(Scopes, Name)) -->
+scoped_symbol(symb(Scopes, Name)) -->
     symbol_scopes(Scopes), ws,
     identifier(id(Name)).
-symbol(symb([root|Scopes], Name)) -->
+scoped_symbol(symb([root|Scopes], Name)) -->
     scope_separator, ws,
     symbol_scopes(Scopes), ws,
     identifier(id(Name)).
@@ -285,13 +287,13 @@ atomic_expression(Ops, Tree) -->
     ( int(Tree)
     | string(Tree)
     | block(Ops, Tree)
+    | method(Tree)
+    | fnparams(Ops, Tree)
     | "(", ws, expression(Ops, Tree0), ws, ")",
       {Tree = paren(Tree0)}
-    | method(Tree)
     | args(Ops, Tree)
-    | fnparams(Ops, Tree)
+    | scoped_symbol(Tree)
     | identifier(Tree)
-    | symbol(Tree)
     ).
 
 atomic_expressions(Ops, [Expr|Exprs]) -->
@@ -493,3 +495,9 @@ declaration(Ops, decl(Name, Type)) -->
 expression_statement(Ops, expr_stmt(Tree)) --> expression(Ops, Tree).
 
 % -----
+
+program(Tree) -->
+    {base_operators(Ops)},
+    program(Ops, Tree).
+program(Ops, prog(Stmts)) -->
+    ws, statements(Ops, Stmts), ws.
