@@ -205,10 +205,8 @@ statements_(_, [nil]) --> ";".
 
 % -----
 
-func(Ops, func(Params, Body)) -->
-    func_operator,
-    params(Ops, Params), ws,
-    expression(Ops, Body).
+fnparams(Ops, fnparams(Params)) -->
+    func_operator, params(Ops, Params).
 
 params(Ops, Params) --> "[", ws, params_(Ops, Params), ws, "]".
 params(_, []) --> "[", ws, "]".
@@ -222,19 +220,12 @@ param(Ops, Param) --> declaration(Ops, Param).
 
 % -----
 
-:- table method//2, funcall//2.
-
-method(Ops, method(Obj, Method)) -->
-    expression(Ops, Obj), ws,
+method(method(Method)) -->
     method_operator, ws,
     identifier(id(Method)).
 
-funcall(Ops, call(Func, Args)) -->
-    expression(Ops, Func), ws,
-    args(Ops, Args).
-
-args(Ops, Args) --> "(", ws, args_(Ops, Args), ws, ")".
-args(_, []) --> "(", ws, ")".
+args(Ops, args(Args)) --> "(", ws, args_(Ops, Args), ws, ")".
+args(_, args([])) --> "(", ws, ")".
 
 args_(Ops, [Arg]) --> argument(Ops, Arg).
 args_(Ops, [Arg]) --> argument(Ops, Arg), ws, ",".
@@ -296,9 +287,9 @@ atomic_expression(Ops, Tree) -->
     | block(Ops, Tree)
     | "(", ws, expression(Ops, Tree0), ws, ")",
       {Tree = paren(Tree0)}
-    | func(Ops, Tree)
-    | funcall(Ops, Tree)
-    | method(Ops, Tree)
+    | method(Tree)
+    | args(Ops, Tree)
+    | fnparams(Ops, Tree)
     | identifier(Tree)
     | symbol(Tree)
     ).
@@ -308,6 +299,66 @@ atomic_expressions(Ops, [Expr|Exprs]) -->
     ws,
     atomic_expressions(Ops, Exprs).
 atomic_expressions(Ops, [Expr]) --> atomic_expression(Ops, Expr).
+
+% -----
+
+% Functions, methods and calls may have full expressions within that are not
+% marked by a separator:
+%
+%    func(Params, Body) --> fnparams(Params), ws, expression(Body).
+%    method(Obj, Method) --> expression(Obj), ws, identifier(Method).
+%    call(Func, Args) --> expression(Func), ws, args(Args).
+%
+% We can't use this exact grammar because we'd be left with a left recursion.
+% The solution found is first parsing the parts as atomic expressions delimited
+% by whitespace, then building their structs with build_expressions, before
+% feeding to operation//3.
+
+% TODO: the behavior of method name and call args are akin to a suffix operator,
+% and the fn params are akin to a prefix operator. Perhaps we can abstract that,
+% and make the transformation over the expression tree?
+%
+% `x.len` =>
+%   [id("x"), method("len")] =>
+%   operation(op(_, yf, method("len")), id("x")) =>
+%   method(id("x"), "len")
+% `f()` =>
+%   [id("f"), args([])] =>
+%   operation(op(_, yf, args([])), id("f")) =>
+%   call(id("f"), args([]))
+% `fn[f] f()` =>
+%   [fnparams([id("f")]), id("f"), args([])] =>
+%   operation(op(_, fy, fnparams([id("f")])),
+%       operation(op(_, yf, args([])),
+%           id("f")))                        =>
+%   func([id("f")], call(id("f"), args([])))
+%
+% This might enable creating complex operators, like regexp's "{m,n}" suffix counter.
+
+build_exprs([Expr, method(Method)|Exprs], Exprs1) :- !,
+    build_exprs([method(Expr, Method)|Exprs], Exprs1).
+build_exprs([Expr, args(Args)|Exprs], Exprs1) :- !,
+    build_exprs([call(Expr, Args)|Exprs], Exprs1).
+build_exprs([Expr|Exprs], [Expr|Exprs1]) :-
+    build_exprs(Exprs, Exprs1).
+build_exprs([], []).
+
+build_funcs(Exprs0, Exprs1) :-
+    reverse(Exprs0, RExprs0),
+    build_funcs_(RExprs0, RExprs1),
+    reverse(RExprs1, Exprs1).
+
+build_funcs_([Expr, fnparams(Params)|Exprs0], Exprs1) :- !,
+    build_funcs_([func(Params, Expr)|Exprs0], Exprs1).
+build_funcs_([Expr|Exprs0], [Expr|Exprs1]) :-
+    build_funcs_(Exprs0, Exprs1).
+build_funcs_([], []).
+
+build_expressions(Exprs0, Exprs2) :-
+    build_exprs(Exprs0, Exprs1),
+    build_funcs(Exprs1, Exprs2).
+
+% -----
 
 % Checks if a list of atomic expressions may be a possible operation, by
 % checking that each pair of consecutive elements has at least one identifier.
@@ -331,9 +382,7 @@ extract_symbs(Exprs, SymbSet) :-
 filter_operators(Ops, SymbSet, ExprOps) :-
     include({SymbSet}/[op(_,_,Symb)]>>ord_memberchk(Symb, SymbSet), Ops, ExprOps).
 
-% Remove parens from expression tree after operation is parsed.
-% Parens mark literal operators that should be treated just like identifiers, e.g.,
-% "add := (+)" is different from "add := +".
+% Remove parens from expression tree after expression is parsed.
 remove_parens(paren(Expr0), Expr) :- !,
     remove_parens(Expr0, Expr).
 remove_parens(operation(Op, Expr0), operation(Op, Expr)) :- !,
@@ -341,6 +390,14 @@ remove_parens(operation(Op, Expr0), operation(Op, Expr)) :- !,
 remove_parens(operation(Op, Left0, Right0), operation(Op, Left, Right)) :- !,
     remove_parens(Left0, Left),
     remove_parens(Right0, Right).
+remove_parens(func(Params0, Body0), func(Params, Body)) :- !,
+    remove_parens(Body0, Body),
+    maplist(remove_parens, Params0, Params).
+remove_parens(call(Func0, Args0), call(Func, Args)) :- !,
+    remove_parens(Func0, Func),
+    maplist(remove_parens, Args0, Args).
+remove_parens(method(Obj0, Method), method(Obj, Method)) :- !,
+    remove_parens(Obj0, Obj).
 remove_parens(X, X).
 
 % An expression may be a single atomic expression, or an operation appearing as a list
@@ -349,10 +406,11 @@ expression(Tree) -->
     {base_operators(Ops)},
     expression(Ops, Tree).
 expression(Ops, Tree) -->
-    atomic_expressions(Ops, Exprs),
-    {( Exprs = [Tree0] ->
+    atomic_expressions(Ops, Exprs0),
+    {( Exprs0 = [Tree0] ->
        true
-     ; valid_operation(Exprs),
+     ; build_expressions(Exprs0, Exprs),
+       valid_operation(Exprs),
        extract_symbs(Exprs, SymbSet),
        filter_operators(Ops, SymbSet, ExprOps),
        phrase(operation(ExprOps, 1200, Tree0), Exprs)

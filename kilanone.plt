@@ -78,6 +78,14 @@ parse_func(`fn[ x:Int , ] x`, func([decl("x", id("Int"))], id("x"))).
 parse_func(`fn[x, y] x`, func([id("x"), id("y")], id("x"))).
 parse_func(`fn[x, y:Int] x`, func([id("x"), decl("y", id("Int"))], id("x"))).
 parse_func(`fn[x, y:Int,] x`, func([id("x"), decl("y", id("Int"))], id("x"))).
+parse_func(`fn[x] fn[y] (x+y)`,
+    func([id("x")],
+        func([id("y")],
+            operation(op(_,_,"+"), id("x"), id("y"))))).
+parse_func(`fn[x, y] x+y`,
+    operation(op(_,_,"+"),
+        func([id("x"), id("y")], id("x")),
+        id("y"))).
 test("parse func", [nondet, forall(parse_func(Text, Want)), Got = Want]) :-
     phrase(expression(Got), Text).
 
