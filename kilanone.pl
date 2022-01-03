@@ -1,4 +1,4 @@
-:- module(kilanone, [expression//1, expression//2, statement//1, statement//2, program//1]).
+:- module(kilanone, [expression//1, expression//2, program//1, program//2]).
 
 :- use_module(library(ordsets)).
 :- use_module(library(yall)).

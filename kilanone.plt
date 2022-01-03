@@ -254,7 +254,7 @@ parse_assignment(`::a := x`, assign(symb([root], "a"), id("x"))).
 parse_assignment(`obj::a := x`, assign(symb(["obj"], "a"), id("x"))).
 parse_assignment(`obj::a := obj::x`, assign(symb(["obj"], "a"), symb(["obj"], "x"))).
 test("parse assignment", [nondet, forall(parse_assignment(Text, Want)), Got = Want]) :-
-    phrase(statement(Got), Text).
+    phrase(program(prog([Got])), Text).
 
 parse_declaration(`b: Bool`, decl("b", id("Bool"))).
 parse_declaration(`b:Bool`, decl("b", id("Bool"))).
@@ -265,7 +265,7 @@ parse_declaration(`this_or_that: X+Y`,
             id("X"),
             id("Y")))).
 test("parse declaration", [nondet, forall(parse_declaration(Text, Want)), Got = Want]) :-
-    phrase(statement(Got), Text).
+    phrase(program(prog([Got])), Text).
 
 % -----
 
